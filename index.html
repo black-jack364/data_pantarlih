@@ -18,13 +18,15 @@
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col relative overflow-hidden">
+<!-- Perbaikan 1: Menghapus overflow-hidden dari body -->
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col relative">
 
     <!-- Sidebar Mobile Backdrop -->
     <div id="sidebar-backdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 hidden md:hidden transition-opacity"></div>
 
     <!-- Main Content Wrapper -->
-    <div id="app-container" class="flex flex-1 overflow-hidden h-screen">
+    <!-- Perbaikan 2: Mengganti h-screen menjadi h-[100dvh] agar responsif di HP -->
+    <div id="app-container" class="flex flex-1 overflow-hidden h-[100dvh]">
         <!-- Sidebar Navigation -->
         <aside id="sidebar" class="fixed md:static inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white flex flex-col transition-all duration-300 transform -translate-x-full md:translate-x-0 shrink-0 shadow-xl overflow-y-auto">
             <div class="p-4 border-b border-slate-800 flex items-center justify-between">
@@ -136,9 +138,12 @@
                             </div>
                         </div>
 
-                        <div class="overflow-x-auto min-h-[350px]">
-                            <table class="w-full text-xs text-left text-slate-600">
-                                <thead class="bg-slate-900 text-white uppercase font-bold text-[11px] tracking-wider border-b-2 border-slate-950">
+                        <!-- Perbaikan 3: Menambahkan overflow-auto dan membatasi max-height tabel -->
+                        <div class="overflow-auto min-h-[350px] max-h-[65vh]">
+                            <!-- Perbaikan 4: Menambahkan whitespace-nowrap pada tabel -->
+                            <table class="w-full text-xs text-left text-slate-600 whitespace-nowrap">
+                                <!-- Perbaikan 5: Menambahkan sticky top-0 dan z-10 agar header tetap terlihat saat discroll -->
+                                <thead class="bg-slate-900 text-white uppercase font-bold text-[11px] tracking-wider border-b-2 border-slate-950 sticky top-0 z-10">
                                     <tr>
                                         <th class="px-3 py-3 text-center w-12">NO</th>
                                         <th class="px-3 py-3 text-left">KK</th>
