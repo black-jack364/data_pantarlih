@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Pendataan Warga & Status Pemilih</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icon CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col relative overflow-hidden">
+
+    <!-- Sidebar Mobile Backdrop -->
+    <div id="sidebar-backdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 hidden md:hidden transition-opacity"></div>
+
+    <!-- Main Content Wrapper -->
+    <div id="app-container" class="flex flex-1 overflow-hidden h-screen">
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="fixed md:static inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white flex flex-col transition-all duration-300 transform -translate-x-full md:translate-x-0 shrink-0 shadow-xl overflow-y-auto">
+            <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center space-x-3 overflow-hidden">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shrink-0 shadow-lg shadow-indigo-600/30">
+                        <i class="fa-solid fa-users-rectangle text-xl text-white"></i>
+                    </div>
+                    <div class="truncate">
+                        <h1 class="font-bold text-base tracking-wide text-white leading-tight truncate">Data Pemilih</h1>
+                        <p class="text-xs text-indigo-400 font-medium truncate">RT 001 - 036</p>
+                    </div>
+                </div>
+                <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <nav class="flex-1 p-4 space-y-1.5">
+                <button class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg bg-indigo-600 text-white font-medium text-sm transition shadow">
+                    <i class="fa-solid fa-users-viewfinder w-5 text-center text-white"></i>
+                    <span>Data Warga & Pemilih</span>
+                </button>
+            </nav>
+
+            <div class="p-4 border-t border-slate-800 text-center text-xs text-slate-500">
+                <span>Sistem Pendataan Warga</span>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+            <!-- Header Bar -->
+            <header class="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 py-3 sm:px-6 flex items-center justify-between shadow-sm">
+                <div class="flex items-center space-x-3">
+                    <button onclick="toggleSidebar()" class="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition" title="Buka/Sembunyikan Sidebar">
+                        <i class="fa-solid fa-bars text-lg"></i>
+                    </button>
+                    <div>
+                        <h2 id="header-title" class="text-lg font-bold text-slate-800">Daftar Warga & Status Hak Pilih</h2>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <button onclick="fetchDataFromSheet()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition shadow-sm">
+                        <i class="fa-solid fa-rotate"></i>
+                        <span>Sinkronkan Data</span>
+                    </button>
+                </div>
+            </header>
+
+            <main class="p-4 sm:p-6 space-y-6 flex-1">
+                <!-- Summary Quick Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-slate-500">Total Warga</p>
+                            <h3 id="stat-total" class="text-2xl font-extrabold text-slate-800 mt-1">0</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                            <i class="fa-solid fa-users text-lg"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-slate-500">Jumlah Pemilih</p>
+                            <h3 id="stat-pemilih" class="text-2xl font-extrabold text-emerald-600 mt-1">0</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                            <i class="fa-solid fa-user-check text-lg"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-slate-500">Jumlah NKK</p>
+                            <h3 id="stat-kk" class="text-2xl font-extrabold text-indigo-600 mt-1">0</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                            <i class="fa-solid fa-address-card text-lg"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MAIN TABLE VIEW -->
+                <div id="view-table" class="space-y-6">
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                        <!-- Search & Filter Controls -->
+                        <div class="p-4 bg-slate-50 border-b border-slate-200 gap-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+                            <div class="relative">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
+                                <input type="text" id="search-input" onkeyup="filterData()" placeholder="Cari Nama, NIK, No. KK..." 
+                                    class="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <select id="filter-rt" onchange="filterData()" class="w-full py-2 px-3 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <option value="ALL">-- Semua RT (36 RT) --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <select id="filter-tps" onchange="filterData()" class="w-full py-2 px-3 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <option value="ALL">-- Semua TPS --</option>
+                                    <option value="01">TPS 01</option>
+                                    <option value="02">TPS 02</option>
+                                </select>
+                            </div>
+                            <div>
+                                <button onclick="resetFilters()" class="w-full py-2 px-3 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-lg transition flex items-center justify-center space-x-1">
+                                    <i class="fa-solid fa-rotate-left"></i><span>Reset Filter</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto min-h-[350px]">
+                            <table class="w-full text-xs text-left text-slate-600">
+                                <thead class="bg-slate-900 text-white uppercase font-bold text-[11px] tracking-wider border-b-2 border-slate-950">
+                                    <tr>
+                                        <th class="px-3 py-3 text-center w-12">NO</th>
+                                        <th class="px-3 py-3 text-left">KK</th>
+                                        <th class="px-3 py-3 text-left">NIK</th>
+                                        <th class="px-3 py-3 text-left">NAMA LENGKAP</th>
+                                        <th class="px-3 py-3 text-left">TEMPAT LAHIR</th>
+                                        <th class="px-3 py-3 text-center">TANGGAL LAHIR</th>
+                                        <th class="px-3 py-3 text-center">UMUR</th>
+                                        <th class="px-3 py-3 text-center">JK</th>
+                                        <th class="px-3 py-3 text-center">RT</th>
+                                        <th class="px-3 py-3 text-center">TPS</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-body"></tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination Section -->
+                        <div class="px-4 py-3 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                            <div class="text-slate-500" id="pagination-info">
+                                Menampilkan <span class="font-semibold text-slate-800" id="page-start">0</span> - <span class="font-semibold text-slate-800" id="page-end">0</span> dari <span class="font-semibold text-slate-800" id="total-items">0</span> data
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-slate-500">Tampilkan:</span>
+                                <select id="items-per-page" onchange="changeItemsPerPage()" class="border border-slate-300 rounded px-2 py-1 text-xs bg-white font-medium">
+                                    <option value="10">10</option>
+                                    <option value="25" selected>25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                                <div class="flex space-x-1 pl-2" id="pagination-buttons"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-xs border border-slate-700">
+            <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+            <span id="toast-message" class="font-medium">Notifikasi</span>
+        </div>
+    </div>
+
+    <script>
+        // MASUKKAN URL HASIL DEPLOY GOOGLE APPS SCRIPT ANDA DI SINI
+        const API_URL = "https://script.google.com/macros/s/AKfycbyeVsP3b9k8OvzcrwePfnBZLXnulbhqqvHwCmUUmQThzy8hM6rzvNk9D9vIR_I-sFMU/exec";
+
+        let dataWarga = [];
+        let currentPage = 1;
+        let itemsPerPage = 25;
+        let filteredData = [];
+
+        window.onload = function() {
+            populateRtOptions();
+            fetchDataFromSheet();
+        };
+
+        function populateRtOptions() {
+            const filterRtSelect = document.getElementById('filter-rt');
+            let optionsHtml = '';
+            for (let i = 1; i <= 36; i++) {
+                const rtNum = String(i).padStart(3, '0');
+                optionsHtml += `<option value="${rtNum}">RT ${rtNum}</option>`;
+            }
+            if (filterRtSelect) filterRtSelect.innerHTML = `<option value="ALL">-- Semua RT (36 RT) --</option>` + optionsHtml;
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            if (!sidebar) return;
+
+            const isMobile = window.innerWidth < 768;
+
+            if (isMobile) {
+                sidebar.classList.toggle('-translate-x-full');
+                if (backdrop) backdrop.classList.toggle('hidden');
+            } else {
+                sidebar.classList.toggle('md:-ml-64');
+            }
+        }
+
+        function formatDateIndo(dateStr) {
+            if (!dateStr || dateStr === '-') return '-';
+            try {
+                const parts = String(dateStr).split('-');
+                return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dateStr;
+            } catch (e) {
+                return dateStr;
+            }
+        }
+
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function calculateAge(birthDateStr) {
+            if (!birthDateStr) return 0;
+            try {
+                const birth = new Date(birthDateStr);
+                if (isNaN(birth.getTime())) return 0;
+                const now = new Date();
+                let age = now.getFullYear() - birth.getFullYear();
+                const monthDiff = now.getMonth() - birth.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) {
+                    age--;
+                }
+                return age < 0 ? 0 : age;
+            } catch(e) {
+                return 0;
+            }
+        }
+
+        function fetchDataFromSheet() {
+            if (!API_URL || API_URL.includes("PASTE_URL_WEB_APP_HERE")) {
+                showToast("URL Apps Script belum disetel pada file html!");
+                return;
+            }
+            showToast("Mensinkronkan data dengan Google Sheet...");
+            fetch(API_URL + "?action=get")
+                .then(res => res.json())
+                .then(res => {
+                    if (res.status === "success" && res.data) {
+                        dataWarga = res.data;
+                        filterData();
+                        showToast("Data berhasil disinkronkan!");
+                    } else {
+                        throw new Error(res.message || "Gagal mengambil data");
+                    }
+                })
+                .catch(err => {
+                    console.error("Gagal sinkron:", err);
+                    showToast("Gagal terhubung ke Google Sheet.");
+                });
+        }
+
+        function filterData() {
+            const searchVal = document.getElementById('search-input')?.value.toLowerCase().trim() || '';
+            const rtVal = document.getElementById('filter-rt')?.value || 'ALL';
+            const tpsVal = document.getElementById('filter-tps')?.value || 'ALL';
+
+            filteredData = dataWarga.filter(item => {
+                const nama = (item.nama || '').toLowerCase();
+                const nik = String(item.nik || '');
+                const kk = String(item.kk || '');
+                const ket = (item.keterangan || '').toLowerCase();
+                
+                const matchSearch = nama.includes(searchVal) || nik.includes(searchVal) || kk.includes(searchVal) || ket.includes(searchVal);
+                
+                const itemRt = item.rt ? String(item.rt).padStart(3, '0') : '';
+                const matchRt = rtVal === 'ALL' || itemRt === rtVal;
+                
+                const itemTps = item.tps ? String(item.tps).padStart(2, '0') : '';
+                const filterTps = tpsVal === 'ALL' ? 'ALL' : String(tpsVal).padStart(2, '0');
+                const matchTps = tpsVal === 'ALL' || itemTps === filterTps || item.tps === tpsVal;
+
+                return matchSearch && matchRt && matchTps;
+            });
+
+            filteredData.sort((a, b) => String(a.kk || '').localeCompare(String(b.kk || '')));
+            currentPage = 1;
+            renderDashboard();
+        }
+
+        function resetFilters() {
+            if (document.getElementById('search-input')) document.getElementById('search-input').value = '';
+            if (document.getElementById('filter-rt')) document.getElementById('filter-rt').value = 'ALL';
+            if (document.getElementById('filter-tps')) document.getElementById('filter-tps').value = 'ALL';
+            filterData();
+        }
+
+        function renderDashboard() {
+            renderTable(filteredData);
+            updateStats(filteredData);
+        }
+
+        function renderTable(data) {
+            const tableBody = document.getElementById('table-body');
+            if (!tableBody) return;
+
+            const totalItems = data.length;
+            const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+            const pageData = data.slice(startIndex, endIndex);
+
+            if (pageData.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="10" class="px-6 py-10 text-center text-slate-400"><p class="font-medium text-slate-500">Data warga tidak ditemukan</p></td></tr>`;
+                renderPagination(0, 0, 0, 1);
+                return;
+            }
+
+            let html = '';
+            let prevKK = null;
+
+            pageData.forEach((warga, idx) => {
+                const absoluteIndex = startIndex + idx + 1;
+                
+                let borderClass = "border-t border-slate-200"; 
+                if (prevKK !== null && prevKK !== warga.kk) {
+                    borderClass = "border-t-2 border-slate-900";
+                }
+                prevKK = warga.kk;
+
+                const usiaVal = warga.usia !== undefined && warga.usia !== '' ? warga.usia : calculateAge(warga.tanggalLahir);
+
+                html += `
+                    <tr class="transition hover:bg-slate-50 ${borderClass}">
+                        <td class="px-3 py-3 text-center font-bold text-slate-500">${absoluteIndex}</td>
+                        <td class="px-3 py-3 font-mono text-xs font-bold text-indigo-950">${escapeHtml(warga.kk)}</td>
+                        <td class="px-3 py-3 font-mono text-xs text-slate-600">${escapeHtml(warga.nik)}</td>
+                        <td class="px-3 py-3 font-bold text-slate-900">${escapeHtml(warga.nama)}</td>
+                        <td class="px-3 py-3 text-slate-600">${escapeHtml(warga.tempatLahir)}</td>
+                        <td class="px-3 py-3 text-center text-slate-600">${formatDateIndo(warga.tanggalLahir)}</td>
+                        <td class="px-3 py-3 text-center font-semibold text-slate-700">${usiaVal}</td>
+                        <td class="px-3 py-3 text-center font-bold"><span class="px-2 py-0.5 text-xs rounded ${warga.jk === 'L' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}">${escapeHtml(warga.jk || '-')}</span></td>
+                        <td class="px-3 py-3 text-center font-semibold text-slate-700">${escapeHtml(warga.rt || '-')}</td>
+                        <td class="px-3 py-3 text-center font-semibold text-slate-700">${escapeHtml(warga.tps || '-')}</td>
+                    </tr>`;
+            });
+            tableBody.innerHTML = html;
+            renderPagination(totalItems, startIndex + 1, endIndex, totalPages);
+        }
+
+        function renderPagination(totalItems, startItem, endItem, totalPages) {
+            const pageStart = document.getElementById('page-start');
+            const pageEnd = document.getElementById('page-end');
+            const totalItemsEl = document.getElementById('total-items');
+            const buttonsEl = document.getElementById('pagination-buttons');
+
+            if (pageStart) pageStart.innerText = totalItems === 0 ? 0 : startItem;
+            if (pageEnd) pageEnd.innerText = endItem;
+            if (totalItemsEl) totalItemsEl.innerText = totalItems;
+            if (!buttonsEl) return;
+
+            let btnHtml = `<button onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled class="opacity-40 px-2.5 py-1 border border-slate-300 rounded bg-white cursor-not-allowed"' : 'class="px-2.5 py-1 border border-slate-300 rounded bg-white hover:bg-slate-100"'}>&lt;</button>`;
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                    btnHtml += `<button onclick="goToPage(${i})" class="px-2.5 py-1 border font-semibold rounded ${currentPage === i ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white border-slate-300 hover:bg-slate-100'}">${i}</button>`;
+                } else if (i === currentPage - 2 || i === currentPage + 2) {
+                    btnHtml += `<span class="px-1 text-slate-400">...</span>`;
+                }
+            }
+            btnHtml += `<button onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages || totalPages === 0 ? 'disabled class="opacity-40 px-2.5 py-1 border border-slate-300 rounded bg-white cursor-not-allowed"' : 'class="px-2.5 py-1 border border-slate-300 rounded bg-white hover:bg-slate-100"'}>&gt;</button>`;
+            buttonsEl.innerHTML = btnHtml;
+        }
+
+        function goToPage(page) {
+            const totalPages = Math.ceil(filteredData.length / itemsPerPage) || 1;
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            renderTable(filteredData);
+        }
+
+        function changeItemsPerPage() {
+            const el = document.getElementById('items-per-page');
+            itemsPerPage = parseInt(el?.value || '25', 10);
+            currentPage = 1;
+            renderTable(filteredData);
+        }
+
+        function updateStats(data) {
+            const statTotal = document.getElementById('stat-total');
+            const statPemilih = document.getElementById('stat-pemilih');
+            const statKk = document.getElementById('stat-kk');
+
+            if (statTotal) statTotal.innerText = data.length;
+            if (statPemilih) statPemilih.innerText = data.filter(w => w.statusPemilih === 'Pemilih' || !w.statusPemilih).length;
+            if (statKk) statKk.innerText = new Set(data.map(w => w.kk).filter(Boolean)).size;
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            if (!toast || !toastMsg) return;
+
+            toastMsg.innerHTML = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
+        }
+    </script>
+</body>
+</html>
